@@ -1,0 +1,5 @@
+# playbooks/roles/reverse_proxy/handlers/main.yml
+- name: restart nginx
+  systemd:
+    name: nginx
+    state: restarted

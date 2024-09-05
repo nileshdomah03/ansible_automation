@@ -1,0 +1,19 @@
+db_root_password: "{{ lookup('password', '/dev/null length=12 chars=ascii_letters') }}"
+db_user: myuser
+db_password: "{{ lookup('password', '/dev/null length=12 chars=ascii_letters') }}"
+db_name: mydatabase
+
+
+docker_loc : "/home/nileshdomah/Dockerweek7"
+
+env_path : "/home/nileshdomah/interns-ansible-automation/.env"
+
+index_path : "/home/nileshdomah/interns-ansible-automation/playbooks/webroot/index.php"
+
+docker_path : /home/nileshdomah/interns-ansible-automation/playbooks/docker/Dockerfile
+
+docker_compose_path : /home/nileshdomah/interns-ansible-automation/playbooks/template/docker-compose.yml
+
+docker_compose_dest : /home/nileshdomah/Dockerweek7
+
+docker_dest : /home/nileshdomah/Dockerweek7/bin

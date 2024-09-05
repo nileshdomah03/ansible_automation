@@ -1,9 +1,72 @@
 ---
-# Add tasks to generate and configure an SSL certificate and a private key here
-# Add tasks to configure nginx as a reverse proxy here
-# Add vhosts and other necessary files in the files/ and/or templates/ directories as appropriate
-# Use handlers to restart nginx if necessary
+- name: Ensure SSL directory exists
+  file:
+    path: /etc/nginx/ssl/
+    state: directory
+    mode: '0755'
+  become: yes
+- name: Check if SSL private key exists
+  stat:
+    path: /etc/nginx/ssl/nginx-selfsigned.key
+  register: ssl_key_exist
 
-- name: Print message
-  ansible.builtin.debug:
-    msg: Please remove me
+- name: Check if SSL certificate exists
+  stat:
+    path: /etc/nginx/ssl/nginx-selfsigned.crt
+  register: ssl_cert_exist
+
+- name: Install OpenSSL
+  apt:
+    name: openssl
+    state: present
+  become: yes
+
+- name: Generate SSL private key
+  command: >
+    openssl genpkey -algorithm RSA -out /etc/nginx/ssl/nginx-selfsigned.key -pkeyopt rsa_keygen_bits:2048
+  when: not ssl_key_exist.stat.exists
+  become: yes
+
+- name: Generate SSL certificate
+  command: >
+    openssl req -new -x509 -key  /etc/nginx/ssl/nginx-selfsigned.key
+    -out /etc/nginx/ssl/nginx-selfsigned.crt
+    -subj "/C=MU/ST=State/L=Ebene/O=SDWorx/CN=localhost"
+  when: not ssl_cert_exist.stat.exists
+  become: yes
+
+- name: Ensure Nginx sites-available directory exists
+  file:
+    path: /etc/nginx/sites-available
+    state: directory
+    mode: '0755'
+  become: yes
+
+- name: Ensure Nginx sites-enabled directory exists
+  file:
+    path: /etc/nginx/sites-enabled
+    state: directory
+    mode: '0755'
+  become: yes
+
+- name: Copy Nginx vhost configuration
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/sites-available/default.conf
+  become: yes
+
+- name: Enable Nginx site by creating a symlink
+  file:
+    src: /etc/nginx/sites-available/default.conf
+    dest: /etc/nginx/sites-enabled/default.conf
+    state: link
+    force: yes
+  become: yes
+
+- name: Restart Nginx
+  service:
+    name: nginx
+    state: restarted
+  become: yes
+
+

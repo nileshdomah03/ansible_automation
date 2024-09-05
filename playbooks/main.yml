@@ -1,10 +1,9 @@
 ---
-- name: Automation LAMP Stack
-  hosts: localhost
+- name: Setup Docker and Nginx Environment
+  hosts: web_servers
+  become: yes
   roles:
-    - role: prerequisites
-      tags: always
-    - role: configure_lamp
-      tags: always
-    - role: reverse_proxy
-      tags: always
+    - prerequisites
+    - reverse_proxy
+    - configure_lamp
+

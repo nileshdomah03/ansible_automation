@@ -1,7 +1,84 @@
 ---
-# Add tasks to automate the steps done during weeks 5 and 6 here
-# Use the defaults/ and files/ directories too
+# Tasks to automate the steps
+- name: Check if the repository has been cloned
+  stat:
+    path: "{{ docker_loc }}"
+  register: repo_cloned
 
-- name: Print message
-  ansible.builtin.debug:
-    msg: Please remove me
+- name: Clone the repository
+  git:
+    repo: 'https://github.com/EdgeKing810/interns-docker-compose-lamp.git'
+    dest: "{{ docker_loc }}"
+  when: not repo_cloned.stat.exists
+
+- name: Copy .env.sample to .env
+  copy:
+    src: "/home/nileshdomah/Dockerweek7/.env.sample"
+    dest: "/home/nileshdomah/Dockerweek7/.env"
+  when: not repo_cloned.stat.exists
+
+
+- name: Copy Dockerfile to the Docker location
+  copy:
+    src: "/home/nileshdomah/interns-ansible-automation/playbooks/template/Dockerfile"
+    dest: "{{ docker_dest }}"
+
+
+- name: Copy docker-compose.yml to the Docker location
+  copy:
+    src: "/home/nileshdomah/interns-ansible-automation/playbooks/template/docker-compose.yml"
+    dest: "{{ docker_compose_dest }}"
+
+
+
+- name: Generate random password for DB root user
+  set_fact:
+    db_root_password: "{{ db_root_password }}"
+  when: not repo_cloned.stat.exists
+
+- name: Generate random password for DB user
+  set_fact:
+    db_password: "{{ db_password }}"
+  when: not repo_cloned.stat.exists
+
+- name: Update DB_USER in .env file
+  lineinfile:
+    path: "/home/nileshdomah/Dockerweek7/.env" 
+    regexp: '^DB_USER='
+    line: "DB_USER={{ db_user }}"
+  when: not repo_cloned.stat.exists
+
+
+- name: Update DB_PASSWORD in .env file
+  lineinfile:
+    path: "/home/nileshdomah/Dockerweek7/.env"  
+    regexp: '^DB_PASSWORD='
+    line: "DB_PASSWORD={{ db_password }}"
+  when: not repo_cloned.stat.exists
+
+- name: Update DB_ROOT_PASSWORD in .env file
+  lineinfile:
+    path: "/home/nileshdomah/Dockerweek7/.env"  
+    regexp: '^DB_ROOT_PASSWORD='
+    line: "DB_ROOT_PASSWORD={{ db_root_password }}"
+  when: not repo_cloned.stat.exists    
+
+- name: Update DB credentials in index.php
+  replace:
+    path: "{{ index_path }}"
+    regexp: '\$username = ".*";'
+    replace: '$username = "{{ db_user }}";'
+  when: not repo_cloned.stat.exists
+
+- name: Update DB password in index.php
+  replace:
+    path: "{{ index_path }}"
+    regexp: '\$password = ".*";'
+    replace: '$password = "{{ db_password }}";'
+  when: not repo_cloned.stat.exists
+
+
+- name: Run docker-compose up
+  command: docker-compose up -d
+  args:
+    chdir: "/home/nileshdomah/Dockerweek7"  
